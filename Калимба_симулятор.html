@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Симулятор Калимбы</title>
+<link href="https://fonts.bunny.net/css?family=nunito:400,600,700,800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #24243e 70%, #0f0c29 100%);
+  color: #fff;
+  padding: 10px;
+}
+
+.stars {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+
+.star {
+  position: absolute; border-radius: 50%; background: #fff;
+  animation: twinkle var(--dur) ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+.bg-glow {
+  position: fixed; border-radius: 50%;
+  filter: blur(80px); opacity: 0.15;
+  pointer-events: none; z-index: 0;
+}
+
+.bg-glow-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, #ff6b35, transparent);
+  top: -200px; right: -100px;
+  animation: fg1 12s ease-in-out infinite;
+}
+
+.bg-glow-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #a855f7, transparent);
+  bottom: -150px; left: -100px;
+  animation: fg2 15s ease-in-out infinite;
+}
+
+.bg-glow-3 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #06b6d4, transparent);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: fg3 10s ease-in-out infinite;
+}
+
+@keyframes fg1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-50px,80px)} }
+@keyframes fg2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(60px,-60px)} }
+@keyframes fg3 { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.3)} }
+
+.container {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 15px;
+  padding: 15px; width: 100%; max-width: 1400px;
+}
+
+h1 {
+  font-size: 2.2rem; font-weight: 800;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 1px; text-align: center;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.6);
+  margin-top: -8px; text-align: center;
+}
+
+.kalimba-body {
+  position: relative;
+  background: linear-gradient(180deg, #5c3a1e 0%, #4a2e15 30%, #3d2510 60%, #2e1c0a 100%);
+  border-radius: 20px;
+  padding: 20px 20px 15px;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05), inset 0 2px 4px rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.08);
+  width: 100%;
+  max-width: 1200px;
+  overflow: hidden;
+}
+
+.kalimba-body::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 20px; pointer-events: none;
+}
+
+.sound-holes {
+  display: flex; justify-content: center; gap: 20px; margin-bottom: 15px;
+}
+
+.sound-hole {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: radial-gradient(circle, #1a0f05 40%, #2e1c0a 100%);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.05);
+}
+
+.keys-wrapper {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  position: relative;
+  padding: 0 5px;
+  overflow: hidden;
+}
+
+.kalimba-key {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  width: 38px;
+  cursor: pointer; position: relative;
+  transition: transform 0.05s ease, filter 0.05s ease;
+  border-radius: 4px 4px 6px 6px;
+  user-select: none; -webkit-user-select: none;
+  flex-shrink: 0;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.25), inset 0 -1px 2px rgba(0,0,0,0.1);
+}
+
+.kalimba-key::before {
+  content: ''; position: absolute; top: 3px; left: 50%; transform: translateX(-50%);
+  width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.25);
+}
+
+.kalimba-key:hover { filter: brightness(1.1); }
+
+.kalimba-key.active {
+  transform: translateY(2px);
+  filter: brightness(1.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.15);
+}
+
+.kalimba-key .key-note {
+  font-size: 0.55rem; font-weight: 700;
+  color: rgba(60,40,10,0.8); margin-bottom: 3px;
+  white-space: nowrap;
+}
+
+.kalimba-key .key-bind {
+  font-size: 0.55rem; font-weight: 800;
+  color: rgba(60,40,10,0.9);
+  background: rgba(255,255,255,0.3);
+  width: 22px; height: 22px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 5px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  line-height: 1;
+}
+
+.kalimba-key .key-bind-ru {
+  font-size: 0.45rem; font-weight: 700;
+  color: rgba(60,40,10,0.55);
+  margin-bottom: 2px;
+}
+
+.bridge {
+  width: 95%; height: 5px;
+  background: linear-gradient(90deg, #8b6914, #a07828, #8b6914);
+  border-radius: 3px; margin-top: 0; margin-left: auto; margin-right: auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.controls {
+  display: flex; gap: 12px; align-items: center;
+  flex-wrap: wrap; justify-content: center;
+}
+
+.control-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff; padding: 8px 16px;
+  border-radius: 10px; font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.control-btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-1px); }
+.control-btn.active-btn { background: rgba(251,191,36,0.25); border-color: rgba(251,191,36,0.5); color: #fbbf24; }
+
+.volume-control {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.7); font-size: 0.8rem;
+}
+
+.volume-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 90px; height: 5px; border-radius: 3px;
+  background: rgba(255,255,255,0.15); outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fbbf24; cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fbbf24; cursor: pointer; border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.note-display {
+  height: 32px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 700; color: #fbbf24;
+  min-width: 200px; text-align: center;
+}
+
+.hint {
+  font-size: 0.7rem; color: rgba(255,255,255,0.35); text-align: center;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  h1 { font-size: 1.6rem; }
+  .kalimba-key { width: 30px; }
+  .kalimba-key .key-bind { width: 18px; height: 18px; font-size: 0.5rem; }
+  .kalimba-key .key-bind-ru { font-size: 0.4rem; }
+  .kalimba-key .key-note { font-size: 0.45rem; }
+  .keys-wrapper { gap: 2px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+<div class="bg-glow bg-glow-3"></div>
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <h1>🎵 Калимба</h1>
+  <p class="subtitle">Нажимайте клавиши или кликайте по пластинам</p>
+
+  <div class="note-display" id="noteDisplay">Нажмите клавишу для игры</div>
+
+  <div class="kalimba-body">
+    <div class="sound-holes">
+      <div class="sound-hole"></div>
+      <div class="sound-hole"></div>
+      <div class="sound-hole"></div>
+    </div>
+
+    <div class="keys-wrapper" id="keysContainer"></div>
+
+    <div class="bridge"></div>
+  </div>
+
+  <div class="controls">
+    <button class="control-btn" id="reverbBtn" onclick="toggleReverb()">🌊 Реверберация</button>
+    <div class="volume-control">
+      <span>🔈</span>
+      <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70" oninput="changeVolume(this.value)">
+      <span>🔊</span>
+    </div>
+    <button class="control-btn" id="demoBtn" onclick="playDemo()">🎶 Демо</button>
+  </div>
+
+  <div class="hint">
+    Латиница: Z X C V B N M · Q · A S D F G H J K L<br>
+    Кириллица: Я Ч С М И Т Ь · Й · Ф Ы В А П Р О Л Д
+  </div>
+</div>
+
+<script>
+let audioCtx = null;
+let masterGain = null;
+let reverbGain = null;
+let dryGain = null;
+let convolver = null;
+let reverbEnabled = false;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.7;
+  convolver = audioCtx.createConvolver();
+  const sr = audioCtx.sampleRate;
+  const len = sr * 3;
+  const impulse = audioCtx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = impulse.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    }
+  }
+  convolver.buffer = impulse;
+  reverbGain = audioCtx.createGain();
+  reverbGain.gain.value = 0.3;
+  dryGain = audioCtx.createGain();
+  dryGain.gain.value = 0.85;
+  masterGain.connect(dryGain);
+  masterGain.connect(convolver);
+  convolver.connect(reverbGain);
+  dryGain.connect(audioCtx.destination);
+  reverbGain.connect(audioCtx.destination);
+}
+
+function playKalimbaNote(frequency) {
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const now = audioCtx.currentTime;
+  const noteGain = audioCtx.createGain();
+  noteGain.gain.value = 0;
+
+  const osc1 = audioCtx.createOscillator(); osc1.type = 'sine'; osc1.frequency.value = frequency;
+  const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = frequency * 2;
+  const osc2Gain = audioCtx.createGain(); osc2Gain.gain.value = 0.35;
+  const osc3 = audioCtx.createOscillator(); osc3.type = 'sine'; osc3.frequency.value = frequency * 3;
+  const osc3Gain = audioCtx.createGain(); osc3Gain.gain.value = 0.12;
+  const osc4 = audioCtx.createOscillator(); osc4.type = 'sine'; osc4.frequency.value = frequency * 4;
+  const osc4Gain = audioCtx.createGain(); osc4Gain.gain.value = 0.05;
+  const buzzFreq = frequency * 5.8 + Math.random() * 20;
+  const oscBuzz = audioCtx.createOscillator(); oscBuzz.type = 'sine'; oscBuzz.frequency.value = buzzFreq;
+  const buzzGain = audioCtx.createGain(); buzzGain.gain.value = 0.04;
+  const subOsc = audioCtx.createOscillator(); subOsc.type = 'sine'; subOsc.frequency.value = frequency * 0.5;
+  const subGain = audioCtx.createGain(); subGain.gain.value = 0.08;
+  const modOsc = audioCtx.createOscillator(); modOsc.type = 'sine'; modOsc.frequency.value = frequency * 7.2;
+  const modGain = audioCtx.createGain(); modGain.gain.value = frequency * 0.15;
+  modOsc.connect(modGain); modGain.connect(osc1.frequency);
+
+  noteGain.gain.setValueAtTime(0, now);
+  noteGain.gain.linearRampToValueAtTime(0.45, now + 0.003);
+  noteGain.gain.exponentialRampToValueAtTime(0.15, now + 0.08);
+  noteGain.gain.exponentialRampToValueAtTime(0.06, now + 0.3);
+  noteGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+
+  osc2Gain.gain.setValueAtTime(0.35, now); osc2Gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+  osc3Gain.gain.setValueAtTime(0.12, now); osc3Gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+  osc4Gain.gain.setValueAtTime(0.05, now); osc4Gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+  buzzGain.gain.setValueAtTime(0.04, now); buzzGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+  subGain.gain.setValueAtTime(0.08, now); subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+  osc1.connect(noteGain);
+  osc2.connect(osc2Gain); osc2Gain.connect(noteGain);
+  osc3.connect(osc3Gain); osc3Gain.connect(noteGain);
+  osc4.connect(osc4Gain); osc4Gain.connect(noteGain);
+  oscBuzz.connect(buzzGain); buzzGain.connect(noteGain);
+  subOsc.connect(subGain); subGain.connect(noteGain);
+
+  const hpFilter = audioCtx.createBiquadFilter(); hpFilter.type = 'highpass'; hpFilter.frequency.value = 120; hpFilter.Q.value = 0.7;
+  const lpFilter = audioCtx.createBiquadFilter(); lpFilter.type = 'lowpass'; lpFilter.frequency.value = 8000; lpFilter.Q.value = 0.5;
+
+  noteGain.connect(hpFilter); hpFilter.connect(lpFilter); lpFilter.connect(masterGain);
+
+  const endTime = now + 3;
+  osc1.start(now); osc2.start(now); osc3.start(now); osc4.start(now);
+  oscBuzz.start(now); subOsc.start(now); modOsc.start(now);
+  osc1.stop(endTime); osc2.stop(endTime); osc3.stop(endTime); osc4.stop(endTime);
+  oscBuzz.stop(endTime); subOsc.stop(endTime); modOsc.stop(endTime);
+}
+
+// Mapping: each note has English key and Russian key equivalent
+const kalimbaNotes = [
+  { note: 'A3', freq: 220.00, key: 'a', keyRu: 'ф', label: 'A₃' },
+  { note: 'B3', freq: 246.94, key: 'z', keyRu: 'я', label: 'B₃' },
+  { note: 'C4', freq: 261.63, key: 's', keyRu: 'ы', label: 'C₄' },
+  { note: 'D4', freq: 293.66, key: 'x', keyRu: 'ч', label: 'D₄' },
+  { note: 'E4', freq: 329.63, key: 'd', keyRu: 'в', label: 'E₄' },
+  { note: 'F4', freq: 349.23, key: 'c', keyRu: 'с', label: 'F₄' },
+  { note: 'G4', freq: 392.00, key: 'f', keyRu: 'а', label: 'G₄' },
+  { note: 'A4', freq: 440.00, key: 'v', keyRu: 'м', label: 'A₄' },
+  { note: 'B4', freq: 493.88, key: 'g', keyRu: 'п', label: 'B₄' },
+  { note: 'C5', freq: 523.25, key: 'b', keyRu: 'и', label: 'C₅' },
+  { note: 'D5', freq: 587.33, key: 'h', keyRu: 'р', label: 'D₅' },
+  { note: 'E5', freq: 659.25, key: 'n', keyRu: 'т', label: 'E₅' },
+  { note: 'F5', freq: 698.46, key: 'j', keyRu: 'о', label: 'F₅' },
+  { note: 'G5', freq: 783.99, key: 'm', keyRu: 'ь', label: 'G₅' },
+  { note: 'A5', freq: 880.00, key: 'k', keyRu: 'л', label: 'A₅' },
+  { note: 'C6', freq: 1046.50, key: 'q', keyRu: 'й', label: 'C₆' },
+  { note: 'C5+', freq: 523.25, key: 'l', keyRu: 'д', label: 'C₅' },
+];
+
+const keyMap = {};
+kalimbaNotes.forEach(n => {
+  keyMap[n.key] = n;
+  keyMap[n.keyRu] = n;
+});
+
+function buildKalimba() {
+  const container = document.getElementById('keysContainer');
+  container.innerHTML = '';
+
+  const sorted = [...kalimbaNotes].sort((a, b) => a.freq - b.freq);
+  const mid = Math.ceil(sorted.length / 2);
+  const leftKeys = sorted.slice(0, mid).reverse();
+  const rightKeys = sorted.slice(mid).reverse();
+  const allKeys = [...leftKeys, ...rightKeys];
+
+  allKeys.forEach((nd) => {
+    container.appendChild(createKey(nd));
+  });
+}
+
+function createKey(nd) {
+  const key = document.createElement('div');
+  key.className = 'kalimba-key';
+  key.dataset.key = nd.key;
+  key.dataset.note = nd.note;
+
+  const freqRatio = (nd.freq - 220) / (1046 - 220);
+  const height = 90 + freqRatio * 40;
+  key.style.height = height + 'px';
+
+  const hue = 35 + freqRatio * 10;
+  const lightness = 50 + (1 - freqRatio) * 8;
+  key.style.background = `linear-gradient(180deg, hsl(${hue},65%,${lightness + 8}%) 0%, hsl(${hue},60%,${lightness + 4}%) 50%, hsl(${hue},55%,${lightness}%) 100%)`;
+
+  key.innerHTML = `
+    <span class="key-bind">${nd.key.toUpperCase()}</span>
+    <span class="key-bind-ru">${nd.keyRu.toUpperCase()}</span>
+    <span class="key-note">${nd.label}</span>
+  `;
+
+  key.addEventListener('mousedown', (e) => { e.preventDefault(); triggerNoteByKey(nd.key); });
+  key.addEventListener('touchstart', (e) => { e.preventDefault(); triggerNoteByKey(nd.key); });
+  return key;
+}
+
+function triggerNoteByKey(enKey) {
+  const nd = keyMap[enKey];
+  if (!nd) return;
+  playKalimbaNote(nd.freq);
+  const keyEl = document.querySelector(`.kalimba-key[data-key="${nd.key}"]`);
+  if (keyEl) { keyEl.classList.add('active'); setTimeout(() => keyEl.classList.remove('active'), 150); }
+  document.getElementById('noteDisplay').textContent = `♪ ${nd.note} — ${nd.freq.toFixed(1)} Гц`;
+}
+
+const pressedKeys = new Set();
+document.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  const k = e.key.toLowerCase();
+  if (keyMap[k]) { e.preventDefault(); pressedKeys.add(k); triggerNoteByKey(k); }
+});
+document.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  pressedKeys.delete(k);
+  // Also delete the mapped counterpart
+  if (keyMap[k]) {
+    const nd = keyMap[k];
+    pressedKeys.delete(nd.key);
+    pressedKeys.delete(nd.keyRu);
+  }
+});
+
+function toggleReverb() {
+  reverbEnabled = !reverbEnabled;
+  const btn = document.getElementById('reverbBtn');
+  if (reverbEnabled) { btn.classList.add('active-btn'); if(dryGain) dryGain.gain.value = 0.6; if(reverbGain) reverbGain.gain.value = 0.45; }
+  else { btn.classList.remove('active-btn'); if(dryGain) dryGain.gain.value = 0.85; if(reverbGain) reverbGain.gain.value = 0.3; }
+}
+
+function changeVolume(val) { if (masterGain) masterGain.gain.value = val / 100; }
+
+const demoMelody = [
+  { key: 's', delay: 0 }, { key: 'd', delay: 400 }, { key: 'f', delay: 800 }, { key: 'g', delay: 1200 },
+  { key: 'b', delay: 1600 }, { key: 'g', delay: 2000 }, { key: 'f', delay: 2400 }, { key: 'd', delay: 2800 },
+  { key: 's', delay: 3200 }, { key: 'c', delay: 3600 }, { key: 'v', delay: 4000 }, { key: 'b', delay: 4400 },
+  { key: 'n', delay: 4800 }, { key: 'm', delay: 5200 }, { key: 'q', delay: 5600 }, { key: 'm', delay: 6000 },
+  { key: 'n', delay: 6400 }, { key: 'b', delay: 6800 }, { key: 's', delay: 7200 },
+];
+
+let demoTimeouts = [];
+function playDemo() {
+  initAudio();
+  demoTimeouts.forEach(t => clearTimeout(t));
+  demoTimeouts = [];
+  const btn = document.getElementById('demoBtn');
+  btn.classList.add('active-btn');
+  btn.textContent = '🎶 Играет...';
+  demoMelody.forEach(({ key, delay }) => {
+    demoTimeouts.push(setTimeout(() => triggerNoteByKey(key), delay));
+  });
+  demoTimeouts.push(setTimeout(() => { btn.classList.remove('active-btn'); btn.textContent = '🎶 Демо'; }, demoMelody[demoMelody.length - 1].delay + 500));
+}
+
+function createStars() {
+  const sc = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 3 + 1;
+    star.style.width = size + 'px'; star.style.height = size + 'px';
+    star.style.left = Math.random() * 100 + '%'; star.style.top = Math.random() * 100 + '%';
+    star.style.setProperty('--dur', (Math.random() * 4 + 2) + 's');
+    star.style.animationDelay = Math.random() * 5 + 's';
+    sc.appendChild(star);
+  }
+}
+
+createStars();
+buildKalimba();
+</script>
+</body>
+</html>
+
